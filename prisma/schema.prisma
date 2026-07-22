@@ -1,0 +1,130 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           Int       @id @default(autoincrement())
+  username     String    @unique
+  passwordHash String    @map("password_hash")
+  role         String    @default("User")
+  userRole     UserRole  @relation(fields: [role], references: [name], onUpdate: Cascade)
+  firstName    String    @default("") @map("first_name")
+  lastName     String    @default("") @map("last_name")
+  badgeId      String    @default("") @map("badge_id")
+  email        String    @default("")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  bookings         Booking[]
+  createdLabTasks  LabTask[]        @relation("TaskCreator")
+  assignedLabTasks LabTask[]        @relation("TaskAssignee")
+  labTaskHistory   LabTaskHistory[]
+
+  @@map("users")
+}
+
+model UserRole {
+  name        String   @id
+  permissions Json     @default("[]")
+  users       User[]
+
+  @@map("user_roles")
+}
+
+model Equipment {
+  id           Int       @id @default(autoincrement())
+  name         String    @unique
+  type         String    @default("")
+  description  String    @default("")
+  isActive     Boolean   @default(true) @map("is_active")
+  imageDataUrl String?   @map("image_data_url")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  bookings     Booking[]
+
+  @@map("equipment")
+}
+
+model Booking {
+  id          Int       @id @default(autoincrement())
+  equipmentId Int       @map("equipment_id")
+  equipment   Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  userId      Int       @map("user_id")
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dateStart   DateTime  @map("date_start")
+  dateEnd     DateTime  @map("date_end")
+  ecrRef      String    @default("") @map("ecr_ref")
+  notes       String    @default("")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@map("bookings")
+}
+
+model Project {
+  id        String   @id @default(cuid())
+  number    String?
+  name      String
+  createdAt DateTime @default(now())
+  tests     Test[]
+
+  @@map("projects")
+}
+
+model Test {
+  id           String     @id @default(cuid())
+  projectId    String
+  project      Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  order        Int
+  name         String
+  description  String?
+  durationVal  Float      @default(1)
+  durationUnit String     @default("h") // "min" | "h" | "d"
+  note         String?
+  status       String     @default("Planned") // Planned | Running | Done | Blocked
+  equipment    String?
+  parallel     Boolean    @default(false)
+  createdAt    DateTime   @default(now())
+
+  @@index([projectId, order])
+  @@map("tests")
+}
+
+model LabTask {
+  id             String    @id @default(cuid())
+  title          String    
+  description    String    
+  deadline       DateTime
+  priority       String    @default("Medie") 
+  specialRequest String?   
+  status         String    @default("Nepreluat") // Nepreluat, In lucru, Finalizat, Canceled
+  
+  creatorId      Int
+  creator        User      @relation("TaskCreator", fields: [creatorId], references: [id])
+  
+  assigneeId     Int?
+  assignee       User?     @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  history        LabTaskHistory[]
+
+  @@map("lab_tasks")
+}
+
+model LabTaskHistory {
+  id          String   @id @default(cuid())
+  taskId      String   @map("task_id")
+  task        LabTask  @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  
+  userId      Int      @map("user_id")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  action      String   
+  changes     String?  
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("lab_task_history")
+}
