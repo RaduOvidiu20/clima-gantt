@@ -137,14 +137,22 @@ export function LabBoard({ initialTasks, sessionUser, isAdmin }: Props) {
           }}
           onCancel={async (id) => {
             startTransition(async () => {
-              await cancelLabTask(id);
-              setSelectedTask(null);
+              try {
+                await cancelLabTask(id);
+                setSelectedTask(null);
+              } catch (err) {
+                alert((err as Error).message);
+              }
             });
           }}
           onDelete={async (id) => {
             startTransition(async () => {
-              await deleteLabTask(id);
-              setSelectedTask(null);
+              try {
+                await deleteLabTask(id);
+                setSelectedTask(null);
+              } catch (err) {
+                alert((err as Error).message);
+              }
             });
           }}
           pending={pending}
@@ -466,7 +474,6 @@ function EditModal({ task, onClose, onTake, onSave, onCancel, sessionUser, isAdm
                   onClick={() => {
                     if (confirmAction.action === "delete") onDelete(task.id);
                     if (confirmAction.action === "cancel") onCancel(task.id);
-                    setConfirmAction(null);
                   }} 
                   disabled={pending} 
                   className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700 font-medium disabled:opacity-50"
