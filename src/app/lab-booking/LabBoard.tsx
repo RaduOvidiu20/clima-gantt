@@ -228,7 +228,7 @@ function CreateModal({ onClose, onSave, pending }: { onClose: () => void, onSave
   );
 }
 
-function EditModal({ task, onClose, onTake, onSave, onCancel, sessionUser, isAdmin, hasEngineerPerm, pending }: {
+function EditModal({ task, onClose, onTake, onSave, onCancel, onDelete, sessionUser, isAdmin, hasEngineerPerm, pending }: {
   task: LabTaskUI;
   onClose: () => void;
   onTake: (id: string) => void;
