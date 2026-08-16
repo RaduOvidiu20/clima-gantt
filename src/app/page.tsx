@@ -1081,8 +1081,12 @@ function HomeContent() {
                                   confirmLabel: "Șterge",
                                   danger: true,
                                   onConfirm: async () => {
-                                    await apiJson(`/api/roles?name=${encodeURIComponent(r.name)}`, { method: "DELETE" });
-                                    await refreshAdmin();
+                                    try {
+                                      await apiJson(`/api/roles?name=${encodeURIComponent(r.name)}`, { method: "DELETE" });
+                                      await refreshAdmin();
+                                    } catch (err) {
+                                      showAlert("Eroare la ștergerea rolului", (err as Error).message);
+                                    }
                                   }
                                 });
                               }}

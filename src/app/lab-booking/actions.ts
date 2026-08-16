@@ -108,6 +108,10 @@ export async function updateLabTask(id: string, patch: any) {
   const allowedData: any = {};
   const changesList: string[] = [];
   
+  if (patch.title !== undefined && patch.title !== task.title) {
+    allowedData.title = patch.title;
+    changesList.push(`Titlu (${task.title} -> ${patch.title})`);
+  }
   if (patch.description !== undefined && patch.description !== task.description) {
     allowedData.description = patch.description;
     changesList.push("Descriere");
@@ -201,4 +205,36 @@ export async function getLabTaskHistory(taskId: string) {
   });
   
   return history;
+}
+
+export async function deleteLabTask(id: string) {
+  const session = await getSession();
+  if (!session) throw new Error("Neautentificat");
+
+  const task = await prisma.labTask.findUnique({ where: { id } });
+  if (!task) throw new Error("Task indisponibil");
+
+  const isAdmin = hasPermission(session, "admin");
+  const isCreator = task.creatorId === session.id;
+
+  if (!isAdmin && !isCreator) {
+    throw new Error("Doar creatorul sau un admin pot șterge acest task.");
+  }
+
+  if (task.status !== "Canceled") {
+    throw new Error("Doar taskurile anulate pot fi șterse definitiv.");
+  }
+
+  await prisma.$transaction(async (tx) => {
+    // Delete history first to satisfy foreign keys
+    await tx.labTaskHistory.deleteMany({
+      where: { taskId: id }
+    });
+    
+    await tx.labTask.delete({
+      where: { id }
+    });
+  });
+
+  revalidatePath("/lab-booking");
 }

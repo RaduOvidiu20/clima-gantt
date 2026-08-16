@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { createLabTask, updateLabTask, takeLabTask, cancelLabTask, getLabTaskHistory } from "./actions";
+import { createLabTask, updateLabTask, takeLabTask, cancelLabTask, getLabTaskHistory, deleteLabTask } from "./actions";
 
 type UserBasic = { firstName: string; lastName: string; username: string };
 
@@ -141,6 +141,12 @@ export function LabBoard({ initialTasks, sessionUser, isAdmin }: Props) {
               setSelectedTask(null);
             });
           }}
+          onDelete={async (id) => {
+            startTransition(async () => {
+              await deleteLabTask(id);
+              setSelectedTask(null);
+            });
+          }}
           pending={pending}
         />
       )}
@@ -220,6 +226,7 @@ function EditModal({ task, onClose, onTake, onSave, onCancel, sessionUser, isAdm
   onTake: (id: string) => void;
   onSave: (id: string, patch: any) => void;
   onCancel: (id: string) => void;
+  onDelete: (id: string) => void;
   sessionUser: any;
   isAdmin: boolean;
   hasEngineerPerm: boolean;
@@ -308,6 +315,11 @@ function EditModal({ task, onClose, onTake, onSave, onCancel, sessionUser, isAdm
               </div>
 
               <div className="mt-4 flex flex-wrap gap-2 justify-end border-t border-slate-200 pt-4">
+                {task.status === "Canceled" && canCancel && (
+                  <button onClick={() => { if(confirm("Ești sigur că vrei să ștergi definitiv acest task?")) onDelete(task.id) }} disabled={pending} className="px-3 py-1.5 rounded border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50">
+                    Șterge Definitiv
+                  </button>
+                )}
                 {canCancel && task.status !== "Canceled" && (
                   <button onClick={() => { if(confirm("Anulezi acest task?")) onCancel(task.id) }} disabled={pending} className="px-3 py-1.5 rounded border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50">
                     Anulează Task
@@ -335,6 +347,7 @@ function EditModal({ task, onClose, onTake, onSave, onCancel, sessionUser, isAdm
                 e.preventDefault();
                 const fd = new FormData(e.currentTarget);
                 onSave(task.id, {
+                  title: fd.get("title"),
                   description: fd.get("description"),
                   specialRequest: fd.get("specialRequest"),
                   deadline: fd.get("deadline"),
@@ -346,6 +359,11 @@ function EditModal({ task, onClose, onTake, onSave, onCancel, sessionUser, isAdm
               <div className="p-3 bg-blue-50 text-blue-800 rounded mb-2">
                 Ești în modul editare. Poți actualiza detaliile și progresul.
               </div>
+              
+              <label className="flex flex-col">
+                <span className="mb-1 font-medium text-slate-700">Titlu / Nr. Reclamație</span>
+                <input name="title" defaultValue={task.title} required className="rounded border border-slate-300 px-3 py-2" />
+              </label>
               
               <label className="flex flex-col">
                 <span className="mb-1 font-medium text-slate-700">Descriere</span>
