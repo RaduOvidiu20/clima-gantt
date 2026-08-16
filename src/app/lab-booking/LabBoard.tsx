@@ -242,6 +242,7 @@ function EditModal({ task, onClose, onTake, onSave, onCancel, sessionUser, isAdm
   const [showHistory, setShowHistory] = useState(false);
   const [historyLogs, setHistoryLogs] = useState<any[] | null>(null);
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<{ action: "delete" | "cancel", message: string } | null>(null);
 
   const loadHistory = async () => {
     setShowHistory(true);
@@ -316,12 +317,12 @@ function EditModal({ task, onClose, onTake, onSave, onCancel, sessionUser, isAdm
 
               <div className="mt-4 flex flex-wrap gap-2 justify-end border-t border-slate-200 pt-4">
                 {task.status === "Canceled" && canCancel && (
-                  <button onClick={() => { if(confirm("Ești sigur că vrei să ștergi definitiv acest task?")) onDelete(task.id) }} disabled={pending} className="px-3 py-1.5 rounded border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50">
+                  <button onClick={() => setConfirmAction({ action: "delete", message: "Ești sigur că vrei să ștergi definitiv acest task?" })} disabled={pending} className="px-3 py-1.5 rounded border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50">
                     Șterge Definitiv
                   </button>
                 )}
                 {canCancel && task.status !== "Canceled" && (
-                  <button onClick={() => { if(confirm("Anulezi acest task?")) onCancel(task.id) }} disabled={pending} className="px-3 py-1.5 rounded border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50">
+                  <button onClick={() => setConfirmAction({ action: "cancel", message: "Anulezi acest task?" })} disabled={pending} className="px-3 py-1.5 rounded border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50">
                     Anulează Task
                   </button>
                 )}
@@ -448,6 +449,31 @@ function EditModal({ task, onClose, onTake, onSave, onCancel, sessionUser, isAdm
               ) : (
                 <p className="text-slate-500 text-center">Nu există istoric pentru acest task.</p>
               )}
+            </div>
+          </div>
+        )}
+
+        {confirmAction && (
+          <div className="absolute inset-0 bg-white/90 z-20 flex items-center justify-center p-6 backdrop-blur-sm">
+            <div className="bg-white border border-slate-200 shadow-xl rounded-lg p-6 max-w-sm w-full text-center">
+              <h3 className="text-lg font-bold text-slate-800 mb-2">Confirmare</h3>
+              <p className="text-slate-600 mb-6">{confirmAction.message}</p>
+              <div className="flex gap-3 justify-center">
+                <button onClick={() => setConfirmAction(null)} disabled={pending} className="px-4 py-2 rounded text-slate-600 hover:bg-slate-100 font-medium">
+                  Renunță
+                </button>
+                <button 
+                  onClick={() => {
+                    if (confirmAction.action === "delete") onDelete(task.id);
+                    if (confirmAction.action === "cancel") onCancel(task.id);
+                    setConfirmAction(null);
+                  }} 
+                  disabled={pending} 
+                  className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700 font-medium disabled:opacity-50"
+                >
+                  {pending ? "Se procesează..." : "Confirmă"}
+                </button>
+              </div>
             </div>
           </div>
         )}
